@@ -1,0 +1,82 @@
+name: Branch Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: read
+      repository-projects: read
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [20]
+
+    env:
+      NUXT_TAILSCALE_SIGNING_KEY: ${{ secrets.NUXT_TAILSCALE_SIGNING_KEY }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Setup Node v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/checkout@v4
+
+      - name: Show branch name
+        run: echo ${{ github.head_ref || github.ref_name }}
+
+      - name: Modify Nested JSON in wrangler.jsonc
+        run: |
+          jq '.name = "vm-admin"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PUBLIC_GIT_REF = "${{ github.head_ref || github.ref_name }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_CLOUDFLARE_TEAM_NAME = "${{ vars.NUXT_CLOUDFLARE_TEAM_NAME }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PUBLIC_AGGRID_PRO_KEY = "${{ vars.NUXT_PUBLIC_AGGRID_PRO_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PUBLIC_DIRECT_GRAPHQL_URL = "${{ vars.NUXT_PUBLIC_DIRECT_GRAPHQL_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PUBLIC_MAPBOX_TOKEN = "${{ vars.NUXT_PUBLIC_MAPBOX_TOKEN }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PUBLIC_SENTRY_DSN = "${{ vars.NUXT_PUBLIC_SENTRY_DSN }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_FACTS_BASE_URL = "${{ vars.NUXT_FACTS_BASE_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY = "${{ vars.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_FACTS_SUBSCRIPTION_KEY = "${{ vars.NUXT_FACTS_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_FACTS_PMK_SUBSCRIPTION_KEY = "${{ vars.NUXT_FACTS_PMK_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PROGRESSBOOK_BASE_URL = "${{ vars.NUXT_PROGRESSBOOK_BASE_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.PROGRESSBOOK_BASE_AUTH_URL= "${{ vars.PROGRESSBOOK_BASE_AUTH_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY = "${{ vars.NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_PROGRESSBOOK_SCOPE = "${{ vars.NUXT_PROGRESSBOOK_SCOPE }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_ALLOWABLE_JOB_RUN_MINUTES = "${{ vars.NUXT_ALLOWABLE_JOB_RUN_MINUTES }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq '.vars.NUXT_MIN_DELAYED_ATTENDANCE_RECORDS = "${{ vars.NUXT_MIN_DELAYED_ATTENDANCE_RECORDS }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+      - name: cat wrangler.jsonc
+        run: cat wrangler.jsonc
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Lint, Typecheck and Tests
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: |
+            versions upload
+
+      - name: Post Comment With Deployment URL
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          PRNUM: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment $PRNUM --body "Changes deployed to: $DEPLOYMENT_URL"

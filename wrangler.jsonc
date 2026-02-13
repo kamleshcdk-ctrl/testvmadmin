@@ -1,11 +1,36 @@
 {
-  "name": "testvmadmin",
-  "type": "javascript",
-  "main": "app.js",
-  "compatibility_date": "2024-01-01",
-  "env": {
-    "production": {
-      "name": "testvmadmin-production"
-    }
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "blank",
+  "main": "./.output/server/index.mjs",
+  "compatibility_date": "2025-07-05",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./.output/public/"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": [
+      "45 * * * *"
+    ]
+  },
+  "vars": {
+    "NUXT_PUBLIC_GIT_REF": "-",
+    "NUXT_CLOUDFLARE_TEAM_NAME": "-",
+    "NUXT_PUBLIC_AGGRID_PRO_KEY": "-",
+    "NUXT_PUBLIC_DIRECT_GRAPHQL_URL": "-",
+    "NUXT_PUBLIC_MAPBOX_TOKEN": "-",
+    "NUXT_PUBLIC_SENTRY_DSN": "-",
+    "NUXT_FACTS_BASE_URL": "-",
+    "NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY": "-",
+    "NUXT_FACTS_SUBSCRIPTION_KEY": "-",
+    "NUXT_FACTS_PMK_SUBSCRIPTION_KEY": "-",
+    "NUXT_PROGRESSBOOK_BASE_URL": "-",
+    "NUXT_PROGRESSBOOK_BASE_AUTH_URL": "-",
+    "NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY": "-",
+    "NUXT_PROGRESSBOOK_SCOPE": "-",
+    "NUXT_ALLOWABLE_JOB_RUN_MINUTES": "-",
+    "NUXT_MIN_DELAYED_ATTENDANCE_RECORDS": "-"
   }
 }

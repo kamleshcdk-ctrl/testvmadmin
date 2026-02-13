@@ -1,0 +1,48 @@
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*
+
+# Nuxt dev/build outputs
+.output
+.amplify-hosting
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Misc
+.DS_Store
+.fleet
+.DS_Store
+node_modules
+/dist
+.tw.css
+
+# Local env files
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+
+.zed/*
+
+.wrangler/state/*
