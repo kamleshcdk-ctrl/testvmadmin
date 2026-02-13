@@ -73,6 +73,6 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: "4b0f1ee57f782dd63543acbd03dec3c9"
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           # secrets: |
           #   NUXT_TAILSCALE_SIGNING_KEY
