@@ -1,75 +1,65 @@
-# https://medium.com/@fredrik.burmester/nuxt-3-website-with-cloudflare-workers-and-github-actions-336411530aa1
-# https://github.com/cloudflare/wrangler-action
-
 name: Staging VM Admin Deployment
 
 on:
-  push:
-    branches:
-      - main
-
+  workflow_dispatch:  # Manual trigger only
+  
 jobs:
-  ci:
+  deploy:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node: [20]
-
+    timeout-minutes: 60
+    
     env:
       NUXT_TAILSCALE_SIGNING_KEY: ${{ secrets.NUXT_TAILSCALE_SIGNING_KEY }}
-
+    
     steps:
       - name: Setup Node v20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
+          cache: 'npm'
+      
       - uses: actions/checkout@v4
-
+      
       - name: Show branch name
         run: echo ${{ github.head_ref || github.ref_name }}
-
+      
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: echo
-        run: echo ${{ vars.NUXT_CLOUDFLARE_TEAM_NAME }}
-
-      - name: Modify Nested JSON in wrangler.jsonc
+      
+      - name: Set environment variables in wrangler.jsonc
         run: |
+          # Set the worker name and git ref
           jq '.name = "vm-admin"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PUBLIC_GIT_REF = "${{ github.head_ref || github.ref_name }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_CLOUDFLARE_TEAM_NAME = "${{ vars.NUXT_CLOUDFLARE_TEAM_NAME }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PUBLIC_AGGRID_PRO_KEY = "${{ vars.NUXT_PUBLIC_AGGRID_PRO_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PUBLIC_DIRECT_GRAPHQL_URL = "${{ vars.NUXT_PUBLIC_DIRECT_GRAPHQL_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PUBLIC_MAPBOX_TOKEN = "${{ vars.NUXT_PUBLIC_MAPBOX_TOKEN }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PUBLIC_SENTRY_DSN = "${{ vars.NUXT_PUBLIC_SENTRY_DSN }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_FACTS_BASE_URL = "${{ vars.NUXT_FACTS_BASE_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY = "${{ vars.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_FACTS_SUBSCRIPTION_KEY = "${{ vars.NUXT_FACTS_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_FACTS_PMK_SUBSCRIPTION_KEY = "${{ vars.NUXT_FACTS_PMK_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PROGRESSBOOK_BASE_URL = "${{ vars.NUXT_PROGRESSBOOK_BASE_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.PROGRESSBOOK_BASE_AUTH_URL= "${{ vars.PROGRESSBOOK_BASE_AUTH_URL }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY = "${{ vars.NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_PROGRESSBOOK_SCOPE = "${{ vars.NUXT_PROGRESSBOOK_SCOPE }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_ALLOWABLE_JOB_RUN_MINUTES = "${{ vars.NUXT_ALLOWABLE_JOB_RUN_MINUTES }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-          jq '.vars.NUXT_MIN_DELAYED_ATTENDANCE_RECORDS = "${{ vars.NUXT_MIN_DELAYED_ATTENDANCE_RECORDS }}"' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
-
-      - name: cat wrangler.jsonc
+          jq --arg ref "${{ github.head_ref || github.ref_name }}" '.vars.NUXT_PUBLIC_GIT_REF = $ref' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          
+          # Set all other variables
+          jq --arg team "${{ vars.NUXT_CLOUDFLARE_TEAM_NAME }}" '.vars.NUXT_CLOUDFLARE_TEAM_NAME = $team' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg aggrid "${{ vars.NUXT_PUBLIC_AGGRID_PRO_KEY }}" '.vars.NUXT_PUBLIC_AGGRID_PRO_KEY = $aggrid' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg graphql "${{ vars.NUXT_PUBLIC_DIRECT_GRAPHQL_URL }}" '.vars.NUXT_PUBLIC_DIRECT_GRAPHQL_URL = $graphql' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg mapbox "${{ vars.NUXT_PUBLIC_MAPBOX_TOKEN }}" '.vars.NUXT_PUBLIC_MAPBOX_TOKEN = $mapbox' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg sentry "${{ vars.NUXT_PUBLIC_SENTRY_DSN }}" '.vars.NUXT_PUBLIC_SENTRY_DSN = $sentry' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg facts "${{ vars.NUXT_FACTS_BASE_URL }}" '.vars.NUXT_FACTS_BASE_URL = $facts' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg facts_sub "${{ vars.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY }}" '.vars.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY = $facts_sub' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg facts_pm "${{ vars.NUXT_FACTS_PMK_SUBSCRIPTION_KEY }}" '.vars.NUXT_FACTS_PMK_SUBSCRIPTION_KEY = $facts_pm' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg prog "${{ vars.NUXT_PROGRESSBOOK_BASE_URL }}" '.vars.NUXT_PROGRESSBOOK_BASE_URL = $prog' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg prog_auth "${{ vars.PROGRESSBOOK_BASE_AUTH_URL }}" '.vars.PROGRESSBOOK_BASE_AUTH_URL = $prog_auth' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg prog_sub "${{ vars.NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY }}" '.vars.NUXT_PROGRESSBOOK_SUBSCRIPTION_KEY = $prog_sub' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg prog_scope "${{ vars.NUXT_PROGRESSBOOK_SCOPE }}" '.vars.NUXT_PROGRESSBOOK_SCOPE = $prog_scope' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg job_minutes "${{ vars.NUXT_ALLOWABLE_JOB_RUN_MINUTES }}" '.vars.NUXT_ALLOWABLE_JOB_RUN_MINUTES = $job_minutes' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+          jq --arg delayed "${{ vars.NUXT_MIN_DELAYED_ATTENDANCE_RECORDS }}" '.vars.NUXT_MIN_DELAYED_ATTENDANCE_RECORDS = $delayed' wrangler.jsonc > temp.json && mv temp.json wrangler.jsonc
+      
+      - name: Display wrangler.jsonc
         run: cat wrangler.jsonc
-
-      - name: Install Dependencies
+      
+      - name: Install dependencies
         run: npm ci
-
-      - name: Build
-        run: npm run wrangler
-
-      - name: Deploy
+      
+      - name: Build Nuxt app
+        run: npm run build
+      
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # secrets: |
-          #   NUXT_TAILSCALE_SIGNING_KEY
+
