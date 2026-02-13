@@ -51,7 +51,7 @@ export default defineNuxtConfig({
       AGGRID_PRO_KEY: process.env.NUXT_PUBLIC_AGGRID_PRO_KEY,
       DEPLOYED_COMMIT_BRANCH: process.env.AWS_BRANCH || 'local',
       DEPLOYED_COMMIT_VERSION: process.env.AWS_COMMIT_ID || 'local',
-      SENTRY_DSN: '-',
+      SENTRY_DSN: 'https://',
       FACTS_SUBSCRIPTION_KEY: process.env.NUXT_PUBLIC_FACTS_SUBSCRIPTION_KEY
     }
   },
