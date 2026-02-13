@@ -1,0 +1,15 @@
+{
+  "name": "testvmadmin",
+  "version": "1.0.0",
+  "description": "Node.js Hello World project with Cloudflare",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js",
+    "build": "echo 'No build needed for this app'"
+  },
+  "keywords": ["nodejs", "cloudflare", "hello-world"],
+  "author": "kamleshcdk-ctrl",
+  "license": "MIT",
+  "dependencies": {}
+}
